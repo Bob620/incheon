@@ -1,0 +1,7 @@
+{
+  "portManager": {
+    "minPort": 0,
+    "maxPort": 0,
+    "usedPorts": []
+  }
+}
