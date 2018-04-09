@@ -6,7 +6,10 @@ class DatabaseManager {
 			ready: false,
 			url: '',
 			dbName: '',
-			account: {password: '', username: ''},
+			account: {
+				password: '',
+				username: ''
+			},
 			connection: undefined,
 			database: undefined
 		}
@@ -63,7 +66,7 @@ class DatabaseManager {
 	 * @returns {Promise}
 	 */
 	insert(collectionName, ...items) {
-		if (this.isConnected() && items.length > 0) {
+		if (this.isConnected() && collectionName && items.length > 0) {
 			switch(items.length) {
 				case 1:
 					return this.data.database.collection(collectionName).insertOne(items[0]);
@@ -80,8 +83,71 @@ class DatabaseManager {
 	 * @returns {Promise}
 	 */
 	find(collectionName, query={}) {
-		if (this.isConnected()) {
+		if (this.isConnected() && collectionName) {
 			return this.data.database.collection(collectionName).find(query).toArray();
+		}
+		return Promise.reject(false);
+	}
+
+	/**
+	 * @param collectionName
+	 * @param match
+	 * @param change
+	 * @returns {Promise}
+	 */
+	updateOne(collectionName, match, change) {
+		if (this.isConnected() && collectionName && match && change) {
+			return this.data.database.collection(collectionName).updateOne(match, change);
+		}
+		return Promise.reject(false);
+	}
+
+	/**
+	 * @param collectionName
+	 * @param match
+	 * @param change
+	 * @returns {Promise}
+	 */
+	updateMany(collectionName, match, change) {
+		if (this.isConnected() && collectionName && match && change) {
+			return this.data.database.collection(collectionName).updateMany(match, change);
+		}
+		return Promise.reject(false);
+	}
+
+	/**
+	 * @param collectionName
+	 * @param match
+	 * @param item
+	 * @returns {Promise}
+	 */
+	replaceOne(collectionName, match, item) {
+		if (this.isConnected() && collectionName && match && item) {
+			return this.data.database.collection(collectionName).updateMany(match, item);
+		}
+		return Promise.reject(false);
+	}
+
+	/**
+	 * @param collectionName
+	 * @param match
+	 * @returns {Promise}
+	 */
+	deleteOne(collectionName, match) {
+		if (this.isConnected() && collectionName && match) {
+			return this.data.database.collection(collectionName).deleteOne(match, item);
+		}
+		return Promise.reject(false);
+	}
+
+	/**
+	 * @param collectionName
+	 * @param match
+	 * @returns {Promise}
+	 */
+	deleteMany(collectionName, match) {
+		if (this.isConnected() && collectionName && match) {
+			return this.data.database.collection(collectionName).deleteMany(match, item);
 		}
 		return Promise.reject(false);
 	}

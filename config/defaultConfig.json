@@ -3,5 +3,13 @@
     "minPort": 0,
     "maxPort": 0,
     "usedPorts": []
+  },
+  "databaseManager": {
+    "url": "",
+    "dbName": "",
+    "account": {
+      "username": "",
+      "password": ""
+    }
   }
 }
