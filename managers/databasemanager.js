@@ -3,6 +3,7 @@ const MongoClient = require('mongodb').MongoClient;
 class DatabaseManager {
 	constructor() {
 		this.data = {
+			log: false,
 			ready: false,
 			url: '',
 			dbName: '',
@@ -27,15 +28,18 @@ class DatabaseManager {
 	}
 
 	setDBName(name) {
+		this.data.log ? this.data.log(`Using database ${name}`) : {};
 		this.data.dbName = name;
 	}
 
 	setAccountInfo({password, username}) {
+		this.data.log ? this.data.log('Database credentials updated') : {};
 		this.data.account.password = password;
 		this.data.account.username = username;
 	}
 
 	setLocation(url) {
+		this.data.log ? this.data.log('Changing database location...') : {};
 		this.data.url = `mongodb://${url}`;
 		try {
 			this.data.connection.close();
@@ -45,17 +49,21 @@ class DatabaseManager {
 			if (err)
 				throw new Error(err);
 
+			this.data.log ? this.data.log(`Location changed to ${url}`) : {};
+
 			this.data.database = client.db(this.getDBName());
 		});
 	}
 
 	/**
-	 * @param url {String}
-	 * @param dbName {String}
-	 * @param user {Object}
+	 * @param url {string}
+	 * @param dbName {string}
+	 * @param account {{username: string, password: string}}
+	 * @param log {boolean}
 	 */
-	init({url, dbName, user}) {
-		this.setAccountInfo(user);
+	init({url, dbName, account, log=process.env.NODE_ENV !== 'production'}) {
+		this.data.log = log ? require('../services/logger').createLogger('database') : false;
+		this.setAccountInfo(account);
 		this.setDBName(dbName);
 		this.setLocation(url);
 	}
@@ -69,11 +77,14 @@ class DatabaseManager {
 		if (this.isConnected() && collectionName && items.length > 0) {
 			switch(items.length) {
 				case 1:
+					this.data.log ? this.data.log(`Inserting one item into ${collectionName}`) : {};
 					return this.data.database.collection(collectionName).insertOne(items[0]);
 				default:
+					this.data.log ? this.data.log(`Inserting many items into ${collectionName}`) : {};
 					return this.data.database.collection(collectionName).insertMany(items);
 			}
 		}
+		this.data.log ? this.data.log('insert failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -84,8 +95,10 @@ class DatabaseManager {
 	 */
 	find(collectionName, query={}) {
 		if (this.isConnected() && collectionName) {
+			this.data.log ? this.data.log(`Searching in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).find(query).toArray();
 		}
+		this.data.log ? this.data.log('find failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -97,8 +110,10 @@ class DatabaseManager {
 	 */
 	updateOne(collectionName, match, change) {
 		if (this.isConnected() && collectionName && match && change) {
+			this.data.log ? this.data.log(`Updating one in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).updateOne(match, change);
 		}
+		this.data.log ? this.data.log('updateOne failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -110,8 +125,10 @@ class DatabaseManager {
 	 */
 	updateMany(collectionName, match, change) {
 		if (this.isConnected() && collectionName && match && change) {
+			this.data.log ? this.data.log(`Updating many in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).updateMany(match, change);
 		}
+		this.data.log ? this.data.log('updateMany failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -123,8 +140,10 @@ class DatabaseManager {
 	 */
 	replaceOne(collectionName, match, item) {
 		if (this.isConnected() && collectionName && match && item) {
+			this.data.log ? this.data.log(`Replacing one in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).updateMany(match, item);
 		}
+		this.data.log ? this.data.log('replaceOne failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -135,8 +154,10 @@ class DatabaseManager {
 	 */
 	deleteOne(collectionName, match) {
 		if (this.isConnected() && collectionName && match) {
+			this.data.log ? this.data.log(`Deleting one in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).deleteOne(match, item);
 		}
+		this.data.log ? this.data.log('deleteOne failed') : {};
 		return Promise.reject(false);
 	}
 
@@ -147,8 +168,10 @@ class DatabaseManager {
 	 */
 	deleteMany(collectionName, match) {
 		if (this.isConnected() && collectionName && match) {
+			this.data.log ? this.data.log(`Deleting many in ${collectionName}`) : {};
 			return this.data.database.collection(collectionName).deleteMany(match, item);
 		}
+		this.data.log ? this.data.log('deleteMany failed') : {};
 		return Promise.reject(false);
 	}
 }

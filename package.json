@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/Bob620/incheon#readme",
   "dependencies": {
+    "colors": "^1.2.1",
     "mongodb": "^3.0.5"
   }
 }
