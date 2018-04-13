@@ -1,9 +1,9 @@
 const options = {
-	"url": "192.168.1.23:27017",
+	"url": "localhost:27017",
 		"dbName": "test",
 		"account": {
-		"username": "test",
-			"password": "test"
+		"username": "accountUser",
+			"password": "password"
 	},
 	"log": true
 };

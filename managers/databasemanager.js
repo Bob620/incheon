@@ -45,12 +45,13 @@ class DatabaseManager {
 			this.data.connection.close();
 		} catch(err) {}
 
-		this.data.connection = new MongoClient(url, (err, client) => {
-			if (err)
+		this.data.connection = MongoClient.connect(this.data.url, (err, client) => {
+			if (err) {
+				this.data.log ? this.data.log(err) : {};
 				throw new Error(err);
+			}
 
-			this.data.log ? this.data.log(`Location changed to ${url}`) : {};
-
+			this.data.log ? this.data.log(`Location changed to ${this.data.url}`) : {};
 			this.data.database = client.db(this.getDBName());
 		});
 	}

@@ -26,7 +26,7 @@ class Logger extends EventEmitter {
 		else
 			this.data.services.set(serviceName, [message]);
 		this.emit(serviceName, message);
-		this.emit(message, serviceName, message);
+		this.emit('message', serviceName, message);
 	}
 
 	createLogger(service) {
