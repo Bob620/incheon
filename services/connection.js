@@ -3,9 +3,10 @@ const {h, s, get} = require('./datastore'),
       util = require('../util/util');
 
 class Connection {
-	constructor(conn) {
+	constructor(conn, connId) {
 		this.data = {
 			conn,
+			connId,
 			username: '',
 			userLocation: '',
 			isLoggedIn: false,
@@ -87,6 +88,7 @@ class Connection {
 						if (request.users && await this.hasPerms(constants.perms.GETUSERS)) {
 							response.users = await this.getUsers();
 						}
+						this.sendJSON(util.createMessage('get', response));
 					} else {
 						this.sendJSON(util.createMessage('error', {
 							code: constants.websocket.errorCodes.NOTLOGGEDIN,
@@ -97,7 +99,17 @@ class Connection {
 					break;
 				case 'deauth':
 					if (this.isLoggedIn()) {
+						let response = {};
+						if (request.conn) {
+							if (request.conn.includes('this'))
+								conn.close();
+						}
 
+						if (request.users) {
+
+						}
+
+						this.sendJSON(util.createMessage('deauth', response));
 					} else {
 						this.sendJSON(util.createMessage('error', {
 							code: constants.websocket.errorCodes.NOTLOGGEDIN,
