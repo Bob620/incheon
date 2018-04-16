@@ -1,0 +1,24 @@
+{
+  "websocket": {
+    "errorCodes": {
+      "NOTLOGGEDIN": 100,
+      "LOGIN": 101,
+      "TWOFACTOR": 102
+    },
+    "errorMessages": {
+      "NOTLOGGEDIN": "Not logged in",
+      "LOGIN": "Incorrect username or password",
+      "TWOFACTOR": "Incorrect two factor code",
+      "GENERAL": "Unable to identify failure"
+    }
+  },
+  "database": {
+    "USERS": "users",
+    "USERPASS": "passwords",
+    "USERSETTINGS": "settings",
+    "USERPERMS": "perms"
+  },
+  "perms": {
+    "GETUSERS": 1
+  }
+}
