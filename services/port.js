@@ -1,4 +1,4 @@
-class PortManager {
+class Port {
 	constructor() {
 		this.data = {
 			minPort: 0,
@@ -84,4 +84,4 @@ class PortManager {
 	}
 }
 
-module.exports = new PortManager();
+module.exports = new Port();
