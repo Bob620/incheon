@@ -1,5 +1,6 @@
 const {h, s, get} = require('./datastore'),
       constants = require('../util/constants'),
+      wsProtocol = require('../util/wsprotocol');
       util = require('../util/util');
 
 class Connection {
@@ -9,115 +10,36 @@ class Connection {
 			connId,
 			username: '',
 			userLocation: '',
-			isLoggedIn: false,
-			isAuthenticated: false,
-			needsTwoFactor: false
+			state: constants.connection.states.NOTLOGGEDIN
 		};
 
-		conn.on('close', () => {
-			this.data.username = '';
-			this.data.userLocation = '';
-			this.data.isLoggedIn = false;
-			this.data.isAuthenticated = false;
-		});
-
 		conn.on('message', async (message) => {
-			const {type, request} = JSON.parse(message);
+			if (this.getState() !== constants.connection.states.CLOSED) {
+				const {type, request} = JSON.parse(message);
 
-			switch(type) {
-				case 'auth':
-					if (await this.login(request)) {
-						this.data.isAuthenticated = true;
-						if (await this.needsTwoFactor()) {
-							this.sendJSON(util.createMessage('auth', {
-								success: false,
-								need: ['twoFactor']
-							}));
-						} else {
-							this.data.isLoggedIn = true;
-							this.sendJSON(util.createMessage('auth', {
-								success: true,
-								need: []
-							}));
-						}
-					} else {
-						// Failed to login
-						this.sendJSON(util.createMessage('error', {
-							code: constants.websocket.errorCodes.LOGIN,
-							message: constants.websocket.errorMessages.LOGIN
-						}));
-						conn.close();
-					}
-					break;
-				case 'twoFactor':
-					if (!this.isLoggedIn() && this.isAuthenticated() && await this.needsTwoFactor()) {
-						// Implement two factor here
-						this.data.isLoggedIn = true;
-						this.sendJSON(util.createMessage('auth', {
-							success: true,
-							need: []
-						}));
-					} else
-						this.sendJSON(util.createMessage('error', {
-							code: constants.websocket.errorCodes.TWOFACTOR,
-							message: constants.websocket.errorMessages.TWOFACTOR
-						}));
-					break;
-				case 'set':
-					if (this.isLoggedIn()) {
-
-					} else {
-						this.sendJSON(util.createMessage('error', {
-							code: constants.websocket.errorCodes.NOTLOGGEDIN,
-							message: constants.websocket.errorMessages.NOTLOGGEDIN
-						}));
-						conn.close();
-					}
-					break;
-				case 'get':
-					if (this.isLoggedIn()) {
-						let response = {};
-						if (request.settings) {
-							response.settings = await this.getSettings();
-						}
-
-						if (request.env) {
-							response.env = await this.getEnv();
-						}
-
-						if (request.users && await this.hasPerms(constants.perms.GETUSERS)) {
-							response.users = await this.getUsers();
-						}
-						this.sendJSON(util.createMessage('get', response));
-					} else {
-						this.sendJSON(util.createMessage('error', {
-							code: constants.websocket.errorCodes.NOTLOGGEDIN,
-							message: constants.websocket.errorMessages.NOTLOGGEDIN
-						}));
-						conn.close();
-					}
-					break;
-				case 'deauth':
-					if (this.isLoggedIn()) {
-						let response = {};
-						if (request.conn) {
-							if (request.conn.includes('this'))
-								conn.close();
-						}
-
-						if (request.users) {
-
-						}
-
-						this.sendJSON(util.createMessage('deauth', response));
-					} else {
-						this.sendJSON(util.createMessage('error', {
-							code: constants.websocket.errorCodes.NOTLOGGEDIN,
-							message: constants.websocket.errorMessages.NOTLOGGEDIN
-						}));
-						conn.close();
-					}
-					break;
+				switch(type) {
+					case 'auth':
+						wsProtocol.auth(this, request);
+						break;
+					case 'twoFactor':
+						wsProtocol.twoFactor(this, request);
+						break;
+					case 'set':
+						wsProtocol.set(this, request);
+						break;
+					case 'get':
+						wsProtocol.get(this, request);
+						break;
+					case 'deauth':
+						wsProtocol.deauth(this, request);
+						break;
+				}
+			} else {
+				this.sendResponse('error', {
+					code: constants.websocket.errorCodes.SERVERERROR,
+					message: constants.websocket.errorMessages.SERVERERROR
+				});
+				this.close();
 			}
 		});
 	}
@@ -130,12 +52,16 @@ class Connection {
 		return await h.getall(`${this.data.userLocation}:${constants.database.USERSETTINGS}`);
 	}
 
+	getState() {
+		return this.data.state;
+	}
+
 	async getEnv() {
 		return {};
 	}
 
 	async getUsers() {
-		return {};
+		return await get(constants.database.USERS);
 	}
 
 	getUsername() {
@@ -143,11 +69,7 @@ class Connection {
 	}
 
 	isLoggedIn() {
-		return this.data.isLoggedIn;
-	}
-
-	isAuthenticated() {
-		return this.data.isAuthenticated;
+		return this.data.state === constants.connection.states.LOGGEDIN;
 	}
 
 	async hasPerms(...perms) {
@@ -159,22 +81,33 @@ class Connection {
 		return true;
 	}
 
-	async needsTwoFactor() {
-		return this.data.needsTwoFactor;
+	needsTwoFactor() {
+		return this.data.state === constants.connection.states.NEEDSTWOFACTOR;
 	}
 
 	async login({username, password}) {
 		if (username && password && !username.includes(':')) {
 			username = username.toLowerCase();
 
-			if (await s.ismember(constants.database.USERS, username) && await get(`${constants.database.USERS}:${username}:${constants.database.USERPASS}`) === util.hash(password)) {
+			if (await s.ismember(constants.database.USERS, username) && await get(`${constants.database.USERS}:${username}:${constants.database.USERPASS}`) === util.hash(username, password)) {
 				this.data.username = username;
 				this.data.userLocation = `${constants.database.USERS}:${username}`;
-				this.data.isLoggedIn = true;
+
+				const settings = await this.getSettings();
+
+				if (settings.needsTwoFactor)
+					this.data.state = constants.connection.states.NEEDSTWOFACTOR;
+				else
+					this.data.state = constants.connection.states.LOGGEDIN;
+
 				return true;
 			}
 		}
 		return false;
+	}
+
+	async checkTwoFactor(code) {
+		return true;
 	}
 
 	sendString(message) {
@@ -183,6 +116,14 @@ class Connection {
 
 	sendJSON(message) {
 		this.data.conn.send(JSON.stringify(message));
+	}
+
+	sendResponse(type, response) {
+		this.sendJSON(util.createMessage(type, response));
+	}
+
+	close() {
+		this.data.conn.close();
 	}
 }
 

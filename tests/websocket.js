@@ -3,21 +3,21 @@ const wsOptions = {
 };
 
 const uws = require('uws');
-const nacl = require('tweetnacl');
 
-const logger = require('../services/logger');
-const {client, getAsync} = require('../services/datastore');
-const ws = require('../services/websockets');
-const log = logger.createLogger('Tester');
+const logger = require('../services/logger'),
+      {hm, s, set} = require('../services/datastore'),
+      ws = require('../services/websockets'),
+      log = logger.createLogger('Tester'),
+      constants = require('../util/constants'),
+      util = require('../util/util');
 
-const constants = require('../util/constants');
-const util = require('../util/util');
+set('users:test:password', util.hash('test', 'test')).catch(() => {});
+hm.set('users:test:settings', 'someSetting', 'someValue').catch(() => {});
+s.add('users', 'test').catch(() => {});
 
 logger.on('message', (serviceName, message) => {
 	console.log(`[${serviceName}] - ${message}`)
 });
-
-datastore.set();
 
 ws.init(wsOptions);
 const socket = new uws(`ws://localhost:${wsOptions.port}`);
@@ -38,10 +38,17 @@ socket.on('message', (message) => {
 	const {type, response} = JSON.parse(message);
 	switch(type) {
 		case 'auth':
-			if (!response.twoFactor)
-				if (response.login)
+			if (!response.needs.includes('twoFactor'))
+				if (response.success) {
 					log(`${'PASS'.green} | Authenticate via ws`);
-				else
+					socket.send(JSON.stringify({
+						type: 'get',
+						request: {
+							settings: [],
+							env: []
+						}
+					}));
+				} else
 					log(`${'FAIL'.red} | Authenticate via ws`);
 			else
 				// IMPLEMENT TWOFACTOR SEND MESSAGE HERE
@@ -57,6 +64,20 @@ socket.on('message', (message) => {
 
 			break;
 		case 'get':
+			if (response.settings)
+				log(`${'PASS'.green} | Responded with settings`);
+			else
+				log(`${'FAIL'.red} | Responded with settings`);
+
+			if (response.env)
+				log(`${'PASS'.green} | Responded with environments`);
+			else
+				log(`${'FAIL'.red} | Responded with environments`);
+
+			if (response.users)
+				log(`${'PASS'.green} | Responded with Users`);
+			else
+				log(`${'FAIL'.red} | Responded with Users`);
 			break;
 		case 'error':
 			log(response.code);

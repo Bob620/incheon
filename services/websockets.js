@@ -1,9 +1,8 @@
 const uws = require('uws');
 
-const auth = require('./userperms'),
-      constants = require('../util/constants'),
-      uuid = require('../util/util'),
-      Connection = require('./connection');
+const uuid = require('../util/util'),
+      Connection = require('./connection'),
+      constants = require('../util/constants');
 
 class websockets {
 	constructor() {
@@ -40,6 +39,7 @@ class websockets {
 			this.addConnUser(connId, connection);
 
 			conn.on('close', () => {
+				connection.data.state = constants.connection.states.CLOSED;
 				this.removeConnUser(connId);
 			});
 		});

@@ -1,7 +1,7 @@
 const crypto = require('crypto'),
       nacl = require('tweetnacl');
 
-module.exports = {
+const utilModules = {
 	generateV4: () => {
 		// https://gist.github.com/jed/982883
 		return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b=>(b^crypto.rng(1)[0]%16>>b/4).toString(16));
@@ -41,7 +41,7 @@ module.exports = {
 		return out;
 	},
 	hash: (salt, string) => {
-		return this.Utf8ArrayToStr(nacl.hash(new Uint8Array(`${salt}${string}`)))
+		return utilModules.Utf8ArrayToStr(nacl.hash(new Uint8Array(`${salt}${string}`)))
 	},
 	createMessage: (type, response) => {
 		return {
@@ -50,3 +50,5 @@ module.exports = {
 		}
 	}
 };
+
+module.exports = utilModules;
