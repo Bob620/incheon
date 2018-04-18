@@ -39,8 +39,8 @@
     }
   },
   "perms": {
-    "GETUSERS": 1,
-    "FULLENVACCESS": 2
+    "GETUSERS": "1",
+    "FULLENVACCESS": "2"
   },
   "connection": {
     "states": {

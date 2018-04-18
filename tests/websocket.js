@@ -21,10 +21,11 @@ s.add('users:test:perms:general', 0).catch(() => {});
 s.add('users:test:roles', 'testrole').catch(() => {});
 
 s.add('roles', 'testrole').catch(() => {});
-s.add('roles:testrole:env', 'testid').catch(() => {});
-s.add('roles:testrole:env:testid', 0).catch(() => {});
+s.add('roles:testrole:env', 'testid1').catch(() => {});
+s.add('roles:testrole:env:testid1', 0).catch(() => {});
 s.add('roles:testrole:general', 0).catch(() => {});
 
+s.add('environments', '123', 'testid', 'testid1').catch(() => {});
 
 logger.on('message', (serviceName, message) => {
 	console.log(`[${serviceName}] - ${message}`)
@@ -75,16 +76,23 @@ socket.on('message', (message) => {
 
 			break;
 		case 'get':
-//			console.log(response.settings);
-
-			if (response.settings)
+			if (response.settings) {
 				log(`${'PASS'.green} | Responded with settings`);
-			else
+				if (response.settings.someSetting === 'someValue')
+					log(`${'PASS'.green} | Settings contains correct values`);
+				else
+					log(`${'FAIL'.red} | Settings contains correct values`);
+			} else
 				log(`${'FAIL'.red} | Responded with settings`);
 
-			if (response.env)
+			if (response.env) {
+				response.env = new Map(response.env);
 				log(`${'PASS'.green} | Responded with environments`);
-			else
+				if (response.env.has('testid') && response.env.has('testid1'))
+					log(`${'PASS'.green} | Correct environments included`);
+				else
+					log(`${'FAIL'.red} | Correct environments included`);
+			} else
 				log(`${'FAIL'.red} | Responded with environments`);
 
 			if (response.users)

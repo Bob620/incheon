@@ -78,7 +78,7 @@ module.exports = {
 			}
 
 			if (request.env) {
-				response.env = await connection.getEnv();
+				response.env = [...await connection.getEnv()];
 			}
 
 			if (request.users && await connection.hasPerms(constants.perms.GETUSERS)) {

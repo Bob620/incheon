@@ -52,27 +52,26 @@ class Connection {
 	}
 
 	async getRolePerms() {
-		let rolePerms = [];
-
+		let rolePerms = new Map();
 		const roles = await this.getRoles();
 
-		roles.forEach(async (roleName) => {
-			let env = [];
+		for (const roleName of roles) {
+			let env = new Map();
 
 			const envIds = await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}`);
-			envIds.forEach(async envId => {
-				env.push({
+			for (const envId of envIds) {
+				env.set(envId, {
 					id: envId,
 					perms: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}:${envId}`)
 				});
-			});
+			}
 
-			rolePerms.push({
+			rolePerms.set(roleName, {
 				id: roleName,
 				user: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.GENERAL}`),
 				env
 			});
-		});
+		}
 
 		return rolePerms;
 	}
@@ -82,21 +81,71 @@ class Connection {
 	}
 
 	async getEnvPerms() {
-		let env = {};
+		let envs = new Map();
+		const userPerms = await this.getUserPerms();
 
-		const envIds = await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
-		envIds.forEach(async envId => {
-			env.push({
-				id: envId,
-				perms: await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}:${envId}`)
-			});
-		});
+		if (userPerms.includes(constants.perms.FULLENVACCESS)) {
+			const envIds = await s.members(constants.database.env.BASE);
+			for (const envId of envIds) {
+				envs.set(envId, {
+					id: envId,
+					perms: [constants.perms.FULLENVACCESS]
+				});
+			}
+		} else {
+			const envIds = await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
+			const rolePerms = await this.getRolePerms();
 
-		return env;
+			for (const envId of envIds) {
+				envs.set(envId, {
+					id: envId,
+					perms: await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}:${envId}`)
+				});
+			}
+
+			for(const [roleId, role] of rolePerms) {
+				for(const [envId, env] of role.env) {
+					if(!envs.has(envId))
+						envs.set(envId, env);
+				}
+			}
+		}
+
+		return envs;
 	}
 
 	async getEnvIds() {
-		return await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
+		const userPerms = await this.getUserPerms();
+
+		if(userPerms.includes(constants.perms.FULLENVACCESS)) {
+			return await s.members(constants.database.env.BASE);
+		} else {
+			const envIds = await s.members(`${constants.database.users.perms.ENV}`);
+			const rolePerms = await this.getRolePerms();
+
+			for(const [roleId, role] of rolePerms) {
+				for(const [envId] of role.env) {
+					if(!envIds.includes(envId))
+						envIds.push(envId);
+				}
+			}
+
+			return envIds;
+		}
+	}
+
+	async getEnvSettings() {
+		const envIds = await this.getEnvIds();
+		let env = new Map();
+
+		for (const envId of envIds) {
+			env.set(envId, {
+				id: envId,
+				settings: await h.getall(`${constants.database.env.BASE}:${envId}:${constants.database.env.SETTINGS}`)
+			});
+		}
+
+		return env;
 	}
 
 	async getPerms() {
@@ -111,17 +160,19 @@ class Connection {
 	}
 
 	async getEnv() {
-		let env = {};
+		const envPerms = await this.getEnvPerms();
+		const envSettings = await this.getEnvSettings();
+		let envs = new Map();
 
-		const userPerms = await this.getUserPerms();
-
-		if (userPerms.includes(constants.perms.FULLENVACCESS)) {
-			return await s.members(constants.database.env.BASE);
-		} else {
-			const envIds = await this.getEnvIds();
-			const rolePerms = await this.getRolePerms();
-
+		for (const [envId, envPerm] of envPerms) {
+			envs.set(envId, {
+				id: envId,
+				perms: envPerm,
+				settings: envSettings.get(envId)
+			});
 		}
+
+		return envs;
 
 /*
 		constants.database.users.BASE:username:constants.database.users.perms.ENV
@@ -139,7 +190,6 @@ class Connection {
 		roles:roleName:env:envId []
 		roles:roleName:general []
 */
-		return {};
 	}
 
 	getState() {
