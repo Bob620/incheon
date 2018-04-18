@@ -32,10 +32,15 @@
       "BASE": "roles",
       "ENV": "env",
       "GENERAL": "general"
+    },
+    "env": {
+      "BASE": "environments",
+      "SETTINGS": "settings"
     }
   },
   "perms": {
-    "GETUSERS": 1
+    "GETUSERS": 1,
+    "FULLENVACCESS": 2
   },
   "connection": {
     "states": {

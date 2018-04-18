@@ -52,25 +52,26 @@ class Connection {
 	}
 
 	async getRolePerms() {
-		let rolePerms = {};
+		let rolePerms = [];
 
 		const roles = await this.getRoles();
 
-		roles .forEach(async (roleName) => {
-			let env = {};
+		roles.forEach(async (roleName) => {
+			let env = [];
 
 			const envIds = await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}`);
 			envIds.forEach(async envId => {
-				env[envId] = {
+				env.push({
 					id: envId,
 					perms: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}:${envId}`)
-				};
+				});
 			});
 
-			const role = {
+			rolePerms.push({
+				id: roleName,
 				user: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.GENERAL}`),
 				env
-			};
+			});
 		});
 
 		return rolePerms;
@@ -85,19 +86,24 @@ class Connection {
 
 		const envIds = await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
 		envIds.forEach(async envId => {
-			env[envId] = {
+			env.push({
 				id: envId,
 				perms: await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}:${envId}`)
-			};
+			});
 		});
+
+		return env;
 	}
 
-	async getEnv() {
+	async getEnvIds() {
 		return await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
 	}
 
 	async getPerms() {
-		return {user: this.getUserPerms(), env: this.getEnvPerms()};
+		return {
+			user: this.getUserPerms(),
+			env: this.getEnvPerms()
+		};
 	}
 
 	async getSettings() {
@@ -105,8 +111,18 @@ class Connection {
 	}
 
 	async getEnv() {
-		const perms = await this.getPerms();
-		const rolePerms = await this.getRolePerms();
+		let env = {};
+
+		const userPerms = await this.getUserPerms();
+
+		if (userPerms.includes(constants.perms.FULLENVACCESS)) {
+			return await s.members(constants.database.env.BASE);
+		} else {
+			const envIds = await this.getEnvIds();
+			const rolePerms = await this.getRolePerms();
+
+		}
+
 /*
 		constants.database.users.BASE:username:constants.database.users.perms.ENV
 		constants.database.users.BASE:username:constants.database.users.perms.GENERAL

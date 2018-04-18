@@ -1,5 +1,5 @@
 // CHANGE THIS BEFORE COMMIT
-const client = require('redis').createClient({});
+const client = require('redis').createClient({host:'192.168.1.12'});
 
 const {promisify} = require('util');
 
