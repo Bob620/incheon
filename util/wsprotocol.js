@@ -1,6 +1,9 @@
 const constants = require('../util/constants');
 
 module.exports = {
+	ping: connection => {
+		connection.sendResponse('pong', {});
+	},
 	auth: async (connection, request) => {
 		if (await connection.login(request)) {
 			if (connection.needsTwoFactor()) {
@@ -62,6 +65,14 @@ module.exports = {
 	get: async (connection, request) => {
 		if (connection.isLoggedIn()) {
 			let response = {};
+			if (request.roles) {
+				response.roles = await connection.getRoles();
+			}
+
+			if (request.perms) {
+				response.perms = await connection.getPerms();
+			}
+
 			if (request.settings) {
 				response.settings = await connection.getSettings();
 			}

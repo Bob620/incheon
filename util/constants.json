@@ -18,11 +18,21 @@
     }
   },
   "database": {
-    "USERS": "users",
-    "USERPASS": "password",
-    "USERSETTINGS": "settings",
-    "USERPERMS": "perms",
-    "ROLES": "roles"
+    "users": {
+      "BASE": "users",
+      "PASSWORD": "password",
+      "SETTINGS": "settings",
+      "ROLES": "roles",
+      "perms": {
+        "ENV": "perms:env",
+        "GENERAL": "perms:general"
+      }
+    },
+    "roles": {
+      "BASE": "roles",
+      "ENV": "env",
+      "GENERAL": "general"
+    }
   },
   "perms": {
     "GETUSERS": 1

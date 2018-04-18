@@ -14,7 +14,9 @@ module.exports = {client,
 		get: promisify(client.hmget).bind(client)
 	},
 	s: {
+		members: promisify(client.smembers).bind(client),
 		add: promisify(client.sadd).bind(client),
+		rem: promisify(client.srem).bind(client),
 		ismember: promisify(client.sismember).bind(client)
 	}
 };
