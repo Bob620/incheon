@@ -88,7 +88,7 @@ socket.on('message', (message) => {
 			if (response.env) {
 				response.env = new Map(response.env);
 				log(`${'PASS'.green} | Responded with environments`);
-				if (response.env.has('testid') && response.env.has('testid1'))
+				if (response.env.has('testid') && response.env.has('testid1') && !response.env.has('123'))
 					log(`${'PASS'.green} | Correct environments included`);
 				else
 					log(`${'FAIL'.red} | Correct environments included`);

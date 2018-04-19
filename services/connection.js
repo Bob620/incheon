@@ -103,7 +103,7 @@ class Connection {
 				});
 			}
 
-			for(const [roleId, role] of rolePerms) {
+			for(const [, role] of rolePerms) {
 				for(const [envId, env] of role.env) {
 					if(!envs.has(envId))
 						envs.set(envId, env);
@@ -123,7 +123,7 @@ class Connection {
 			const envIds = await s.members(`${constants.database.users.perms.ENV}`);
 			const rolePerms = await this.getRolePerms();
 
-			for(const [roleId, role] of rolePerms) {
+			for(const [, role] of rolePerms) {
 				for(const [envId] of role.env) {
 					if(!envIds.includes(envId))
 						envIds.push(envId);
@@ -210,10 +210,10 @@ class Connection {
 
 	async hasPerms(...perms) {
 		const userPerms = await this.getPerms();
-		perms.forEach((perm) => {
+		for (const perm of perms) {
 			if (!userPerms.includes(perm))
 				return false;
-		});
+		}
 		return true;
 	}
 
