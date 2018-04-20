@@ -18,6 +18,10 @@
     }
   },
   "database": {
+    "variables": {
+      "FALSE": "false",
+      "TRUE": "true"
+    },
     "users": {
       "BASE": "users",
       "PASSWORD": "password",
@@ -39,6 +43,7 @@
     }
   },
   "perms": {
+    "ACTIVE": "0",
     "GETUSERS": "1",
     "FULLENVACCESS": "2"
   },

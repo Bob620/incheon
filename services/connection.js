@@ -1,6 +1,6 @@
 const {h, s, get} = require('./datastore'),
       constants = require('../util/constants'),
-      wsProtocol = require('../util/wsprotocol');
+      wsProtocol = require('../util/wsprotocol'),
       util = require('../util/util');
 
 class Connection {
@@ -173,23 +173,6 @@ class Connection {
 		}
 
 		return envs;
-
-/*
-		constants.database.users.BASE:username:constants.database.users.perms.ENV
-		constants.database.users.BASE:username:constants.database.users.perms.GENERAL
-		constants.database.users.BASE:username:constants.database.users.ROLES
-
-		constants.database.roles.BASE:roleName:constants.database.roles.ENV
-		constants.database.roles.BASE:roleName:constants.database.roles.GENERAL
-
-		users:username:perms:env [envId]
-		users:username:perms:env:envId []
-		users:username:perms:general []
-
-		roles:roleName:env [envId]
-		roles:roleName:env:envId []
-		roles:roleName:general []
-*/
 	}
 
 	getState() {
@@ -231,7 +214,7 @@ class Connection {
 
 				const settings = await this.getSettings();
 
-				if (settings.needsTwoFactor)
+				if (settings.needsTwoFactor === constants.database.variables.TRUE)
 					this.data.state = constants.connection.states.NEEDSTWOFACTOR;
 				else
 					this.data.state = constants.connection.states.LOGGEDIN;

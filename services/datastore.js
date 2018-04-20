@@ -6,8 +6,10 @@ const {promisify} = require('util');
 module.exports = {client,
 	get: promisify(client.get).bind(client),
 	set: promisify(client.set).bind(client),
+	del: promisify(client.del).bind(client),
 	h: {
-		getall: promisify(client.hgetall).bind(client)
+		getall: promisify(client.hgetall).bind(client),
+		del: promisify(client.hdel).bind(client)
 	},
 	hm: {
 		set: promisify(client.hmset).bind(client),
