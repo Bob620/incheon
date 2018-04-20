@@ -14,10 +14,25 @@ const logger = require('../services/logger'),
 
 s.add('environments', '123', 'testid', 'testid1').catch(() => {});
 
-s.add('roles', 'testrole').catch(() => {});
-s.add('roles:testrole:env', 'testid1').catch(() => {});
-s.add('roles:testrole:env:testid1', 0).catch(() => {});
-s.add('roles:testrole:general', 0).catch(() => {});
+structures.createRole({
+	name: 'testrole',
+	perms: [
+		0
+	],
+	envs: [
+		{
+			id: "testid1",
+			perms: [
+				0
+			]
+		}
+	]
+});
+
+//s.add('roles', 'testrole').catch(() => {});
+//s.add('roles:testrole:env', 'testid1').catch(() => {});
+//s.add('roles:testrole:env:testid1', 0).catch(() => {});
+///s.add('roles:testrole:general', 0).catch(() => {});
 
 structures.createUser({
 	username: 'test',
@@ -42,7 +57,7 @@ structures.createUser({
 			}
 		]
 	}
-}).then(() => {
+}).then(async () => {
 	//set('users:test:password', util.hash('test', 'test')).catch(() => {});
 	//hm.set('users:test:settings', 'someSetting', 'someValue').catch(() => {});
 
@@ -132,6 +147,12 @@ structures.createUser({
 					console.log(err);
 				});
 
+				structures.deleteRole('testrole').then(() => {
+					log(`${'PASS'.green} | Remove role from database`);
+				}).catch((err) => {
+					log(`${'FAIL'.red} | Remove role from database`);
+					console.log(err);
+				});
 				break;
 			case 'error':
 				log(response.code);

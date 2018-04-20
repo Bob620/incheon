@@ -42,13 +42,19 @@ module.exports = {
 		for (const roleName of roles)
 			await s.add(`${userLocation}:${constants.database.users.ROLES}`, roleName);
 	},
-	createRole: async (roleName, perms=[], envPerms=new Map()) => {
+	createRole: async ({name:roleName, perms=[], envs=[]}) => {
+		const roleLocation = `${constants.database.roles.BASE}:${roleName}`;
 
-		s.add('roles', 'testrole').catch(() => {});
-		s.add('roles:testrole:env', 'testid1').catch(() => {});
-		s.add('roles:testrole:env:testid1', 0).catch(() => {});
-		s.add('roles:testrole:general', 0).catch(() => {});
+		await s.add(constants.database.roles.BASE, roleName);
 
+		for (const perm of perms)
+			await s.add(`${roleLocation}:${constants.database.roles.GENERAL}`, perm);
+
+		for (const env of envs) {
+			await s.add(`${roleLocation}:${constants.database.roles.ENV}`, env.id);
+			for (const perm of env.perms)
+				await s.add(`${roleLocation}:${constants.database.roles.ENV}:${env.id}`, perm);
+		}
 	},
 	createEnv: async (envId) => {
 
@@ -66,11 +72,12 @@ module.exports = {
 		for (const perm of generalPerms)
 			await s.rem(`${userLocation}:${constants.database.users.perms.GENERAL}`, perm);
 
-		const envPerms = await s.members(`${userLocation}:${constants.database.users.perms.ENV}`);
-		for (const env of envPerms) {
-			await s.rem(`${userLocation}:${constants.database.users.perms.ENV}`, env.id);
+		const envIds = await s.members(`${userLocation}:${constants.database.users.perms.ENV}`);
+		for (const envId of envIds) {
+			const envPerms = await s.members(`${userLocation}:${constants.database.users.perms.ENV}:${envId}`);
+			await s.rem(`${userLocation}:${constants.database.users.perms.ENV}`, envId);
 			for (const perm of envPerms)
-				await s.rem(`${userLocation}:${constants.database.users.perms.ENV}:${env.id}`, perm);
+				await s.rem(`${userLocation}:${constants.database.users.perms.ENV}:${envId}`, perm);
 		}
 
 		const settings = await h.getall(`${userLocation}:${constants.database.users.SETTINGS}`);
@@ -81,8 +88,22 @@ module.exports = {
 		for (const roleName of roles)
 			await s.rem(`${userLocation}:${constants.database.users.ROLES}`, roleName);
 	},
-	deleteRole: (roleName) => {
+	deleteRole: async (roleName) => {
+		const roleLocation = `${constants.database.roles.BASE}:${roleName}`;
 
+		await s.rem(constants.database.roles.BASE, roleName);
+
+		const perms = await s.members(`${roleLocation}:${constants.database.roles.GENERAL}`);
+		for (const perm of perms)
+			await s.rem(`${roleLocation}:${constants.database.roles.GENERAL}`, perm);
+
+		const envIds = await s.members(`${roleLocation}:${constants.database.roles.ENV}`);
+		for (const envId of envIds) {
+			const envPerms = await s.members(`${roleLocation}:${constants.database.roles.ENV}:${envId}`);
+			await s.rem(`${roleLocation}:${constants.database.roles.ENV}`, envId);
+			for (const perm of envPerms)
+				await s.rem(`${roleLocation}:${constants.database.roles.ENV}:${envId}`, perm);
+		}
 	},
 	deleteEnv: (envId) => {
 
