@@ -63,25 +63,6 @@ structures.createEnv({
 		]
 	});
 
-//s.add('environments', '123', 'testid', 'testid1').catch(() => {});
-
-
-//s.add('roles', 'testrole').catch(() => {});
-//s.add('roles:testrole:env', 'testid1').catch(() => {});
-//s.add('roles:testrole:env:testid1', 0).catch(() => {});
-///s.add('roles:testrole:general', 0).catch(() => {});
-
-
-//set('users:test:password', util.hash('test', 'test')).catch(() => {});
-//hm.set('users:test:settings', 'someSetting', 'someValue').catch(() => {});
-
-
-//s.add('users', 'test').catch(() => {});
-//s.add('users:test:perms:env', 'testid').catch(() => {});
-//s.add('users:test:perms:env:testid', 0).catch(() => {});
-//s.add('users:test:perms:general', 0).catch(() => {});
-//s.add('users:test:roles', 'testrole').catch(() => {});
-
 	ws.init(wsOptions);
 	const socket = new uws(`ws://localhost:${wsOptions.port}`);
 
