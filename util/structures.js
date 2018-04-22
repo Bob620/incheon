@@ -1,134 +1,82 @@
-const {hm, h, s, set, del} = require('../services/datastore'),
+const {s} = require('../services/datastore'),
 	    constants = require('../util/constants'),
-      util = require('../util/util');
-
-/*
-		constants.database.users.BASE:username:constants.database.users.perms.ENV
-		constants.database.users.BASE:username:constants.database.users.perms.GENERAL
-		constants.database.users.BASE:username:constants.database.users.ROLES
-
-		constants.database.roles.BASE:roleName:constants.database.roles.ENV
-		constants.database.roles.BASE:roleName:constants.database.roles.GENERAL
-
-		users:username:perms:env [envId]
-		users:username:perms:env:envId []
-		users:username:perms:general []
-
-		roles:roleName:env [envId]
-		roles:roleName:env:envId []
-		roles:roleName:general []
-*/
+	    User = require('../models/user'),
+	    Role = require('../models/role'),
+	    Env = require('../models/env');
 
 module.exports = {
-	createUser: async ({username, password, settings={}, roles=[], perms={general: [], env: []}}) => {
-		const userLocation = `${constants.database.users.BASE}:${username}`;
+	createUser: async ({username, password, settings={}, roles=[], perms=[], envs=[], needsTwoFactor=false}) => {
+		if (!await s.ismember(constants.database.users.BASE, username)) {
+			const user = new User(username);
 
-		await set(`${userLocation}:${constants.database.users.PASSWORD}`, util.hash(username, password));
+			await user.addPerms(...perms);
 
-		await s.add(constants.database.users.BASE, username);
+			for (const env of envs)
+				await user.addEnv(env.id, ...env.perms);
 
-		for (const perm of perms.general)
-			await s.add(`${userLocation}:${constants.database.users.perms.GENERAL}`, perm);
+			await user.changePassword('', password);
 
-		for (const env of perms.env) {
-			await s.add(`${userLocation}:${constants.database.users.perms.ENV}`, env.id);
-			for (const perm of env.perms)
-				await s.add(`${userLocation}:${constants.database.users.perms.ENV}:${env.id}`, perm);
+			await user.setTwoFactor(needsTwoFactor);
+
+			await user.changeToDefaultSettings(settings);
+
+			await user.addRoles(...roles);
+
+			await s.add(constants.database.users.BASE, username);
+
+			return user;
 		}
-
-		for (const settingName in settings)
-			await hm.set(`${userLocation}:${constants.database.users.SETTINGS}`, settingName, settings[settingName]);
-
-		for (const roleName of roles)
-			await s.add(`${userLocation}:${constants.database.users.ROLES}`, roleName);
+		throw new Error('User already exists');
 	},
 	createRole: async ({name:roleName, perms=[], envs=[]}) => {
-		const roleLocation = `${constants.database.roles.BASE}:${roleName}`;
+		if (!await s.ismember(constants.database.roles.BASE, roleName)) {
+			const role = new Role(roleName);
 
-		await s.add(constants.database.roles.BASE, roleName);
+			await role.addPerms(...perms);
 
-		for (const perm of perms)
-			await s.add(`${roleLocation}:${constants.database.roles.GENERAL}`, perm);
+			for (const env of envs)
+				await role.addEnv(env.id, ...env.perms);
 
-		for (const env of envs) {
-			await s.add(`${roleLocation}:${constants.database.roles.ENV}`, env.id);
-			for (const perm of env.perms)
-				await s.add(`${roleLocation}:${constants.database.roles.ENV}:${env.id}`, perm);
+			await s.add(constants.database.roles.BASE, roleName);
+
+			return role;
 		}
+		throw new Error('Role already exists');
 	},
-	createEnv: async (envId) => {
+	createEnv: async ({id, settings={}}) => {
+		if (!await s.ismember(constants.database.env.BASE, id)) {
+			const env = new Env(id);
 
-		s.add('environments', '123', 'testid', 'testid1').catch(() => {});
+			await env.changeToDefaultSettings(settings);
 
+			await s.add(constants.database.env.BASE, id);
+
+			return env;
+		}
+		throw new Error('Environment already exists');
 	},
 	deleteUser: async (username) => {
-		const userLocation = `${constants.database.users.BASE}:${username}`;
+		if (await s.ismember(constants.database.users.BASE, username)) {
+			const user = new User(username);
 
-		await del(`${userLocation}:${constants.database.users.PASSWORD}`);
-
-		await s.rem(constants.database.users.BASE, username);
-
-		const generalPerms = await s.members(`${userLocation}:${constants.database.users.perms.GENERAL}`);
-		for (const perm of generalPerms)
-			await s.rem(`${userLocation}:${constants.database.users.perms.GENERAL}`, perm);
-
-		const envIds = await s.members(`${userLocation}:${constants.database.users.perms.ENV}`);
-		for (const envId of envIds) {
-			const envPerms = await s.members(`${userLocation}:${constants.database.users.perms.ENV}:${envId}`);
-			await s.rem(`${userLocation}:${constants.database.users.perms.ENV}`, envId);
-			for (const perm of envPerms)
-				await s.rem(`${userLocation}:${constants.database.users.perms.ENV}:${envId}`, perm);
+			return await user.delete();
 		}
-
-		const settings = await h.getall(`${userLocation}:${constants.database.users.SETTINGS}`);
-		for (const settingName in settings)
-			await h.del(`${userLocation}:${constants.database.users.SETTINGS}`, settingName);
-
-		const roles = await s.members(`${userLocation}:${constants.database.users.ROLES}`);
-		for (const roleName of roles)
-			await s.rem(`${userLocation}:${constants.database.users.ROLES}`, roleName);
+		throw new Error('User does not exist');
 	},
 	deleteRole: async (roleName) => {
-		const roleLocation = `${constants.database.roles.BASE}:${roleName}`;
+		if (await s.ismember(constants.database.roles.BASE, roleName)) {
+			const role = new Role(roleName);
 
-		await s.rem(constants.database.roles.BASE, roleName);
-
-		const perms = await s.members(`${roleLocation}:${constants.database.roles.GENERAL}`);
-		for (const perm of perms)
-			await s.rem(`${roleLocation}:${constants.database.roles.GENERAL}`, perm);
-
-		const envIds = await s.members(`${roleLocation}:${constants.database.roles.ENV}`);
-		for (const envId of envIds) {
-			const envPerms = await s.members(`${roleLocation}:${constants.database.roles.ENV}:${envId}`);
-			await s.rem(`${roleLocation}:${constants.database.roles.ENV}`, envId);
-			for (const perm of envPerms)
-				await s.rem(`${roleLocation}:${constants.database.roles.ENV}:${envId}`, perm);
+			return await role.delete();
 		}
+		throw new Error('Role does not exist');
 	},
-	deleteEnv: (envId) => {
+	deleteEnv: async (envId) => {
+		if (await s.ismember(constants.database.env.BASE, envId)) {
+			const env = new Env(envId);
 
-	},
-	addUserRole: (username, roleName) => {
-		s.add(`${constants.database.users.BASE}:${username}:${constants.database.users.ROLES}`, roleName).catch(() => {});
-	},
-	addUserEnv: (username, envId, perms) => {
-		s.add(`${constants.database.users.BASE}:${username}:${constants.database.users.perms.ENV}`, envId).catch(() => {});
-
-		for (const perm of perms)
-			s.add(`${constants.database.users.BASE}:${username}:${constants.database.users.perms.ENV}:${envId}`, perm).catch(() => {});
-	},
-	addUserPerm: (username, type, perms=[]) => {
-		for (const perm of perms)
-			s.add(`${constants.database.users.BASE}:${username}:${type}`, perm).catch(() => {});
-	},
-	addRoleEnv: (roleName, envId, perms) => {
-		s.add(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}`, envId).catch(() => {});
-
-		for (const perm of perms)
-			s.add(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.GENERAL}:${envId}`, perm).catch(() => {});
-	},
-	addRolePerm: (roleName, type, perms) => {
-		for (const perm of perms)
-			s.add(`${constants.database.roles.BASE}:${roleName}:${type}`, perm).catch(() => {});
+			return await env.delete();
+		}
+		throw new Error('Environment does not exist');
 	}
-}
+};

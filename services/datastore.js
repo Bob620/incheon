@@ -9,7 +9,8 @@ module.exports = {client,
 	del: promisify(client.del).bind(client),
 	h: {
 		getall: promisify(client.hgetall).bind(client),
-		del: promisify(client.hdel).bind(client)
+		del: promisify(client.hdel).bind(client),
+		set: promisify(client.hset).bind(client)
 	},
 	hm: {
 		set: promisify(client.hmset).bind(client),

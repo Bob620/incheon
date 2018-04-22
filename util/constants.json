@@ -27,6 +27,7 @@
       "PASSWORD": "password",
       "SETTINGS": "settings",
       "ROLES": "roles",
+      "TWOFACTOR": "twofactor",
       "perms": {
         "ENV": "perms:env",
         "GENERAL": "perms:general"

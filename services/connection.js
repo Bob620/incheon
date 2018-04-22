@@ -1,6 +1,8 @@
-const {h, s, get} = require('./datastore'),
+const {s} = require('./datastore'),
       constants = require('../util/constants'),
       wsProtocol = require('../util/wsprotocol'),
+      User = require('../models/user'),
+      Env = require('../models/env'),
       util = require('../util/util');
 
 class Connection {
@@ -8,8 +10,7 @@ class Connection {
 		this.data = {
 			conn,
 			connId,
-			username: '',
-			userLocation: '',
+			user: new User(),
 			state: constants.connection.states.NOTLOGGEDIN
 		};
 
@@ -48,27 +49,27 @@ class Connection {
 	}
 
 	async getRoles() {
-		return await s.members(`${this.data.userLocation}:${constants.database.users.ROLES}`);
+		return await this.data.user.getRoles();
 	}
 
 	async getRolePerms() {
 		let rolePerms = new Map();
 		const roles = await this.getRoles();
 
-		for (const roleName of roles) {
+		for (const [,role] of roles) {
 			let env = new Map();
 
-			const envIds = await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}`);
-			for (const envId of envIds) {
-				env.set(envId, {
+			const envs = role.getEnvIds();
+			for (const envId of envs)
+				env.set({
 					id: envId,
-					perms: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.ENV}:${envId}`)
+					perms: await role.getEnvPerms(envId)
 				});
-			}
 
+			const roleName = await role.getName();
 			rolePerms.set(roleName, {
 				id: roleName,
-				user: await s.members(`${constants.database.roles.BASE}:${roleName}:${constants.database.roles.GENERAL}`),
+				user: await role.getPerms(),
 				env
 			});
 		}
@@ -77,15 +78,15 @@ class Connection {
 	}
 
 	async getUserPerms() {
-		return await s.members(`${this.data.userLocation}:${constants.database.users.perms.GENERAL}`);
+		return await this.data.user.getPerms();
 	}
 
 	async getEnvPerms() {
 		let envs = new Map();
-		const userPerms = await this.getUserPerms();
 
-		if (userPerms.includes(constants.perms.FULLENVACCESS)) {
+		if (await this.data.user.hasPerm(constants.perms.FULLENVACCESS)) {
 			const envIds = await s.members(constants.database.env.BASE);
+
 			for (const envId of envIds) {
 				envs.set(envId, {
 					id: envId,
@@ -93,20 +94,24 @@ class Connection {
 				});
 			}
 		} else {
-			const envIds = await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}`);
-			const rolePerms = await this.getRolePerms();
+			const envIds = await this.data.user.getEnvIds();
+			const roles = await this.data.user.getRoles();
 
 			for (const envId of envIds) {
 				envs.set(envId, {
 					id: envId,
-					perms: await s.members(`${this.data.userLocation}:${constants.database.users.perms.ENV}:${envId}`)
+					perms: await this.data.user.getEnvPerms(envId)
 				});
 			}
 
-			for(const [, role] of rolePerms) {
-				for(const [envId, env] of role.env) {
+			for(const [,role] of roles) {
+				const envIds = await role.getEnvIds();
+				for(const envId of envIds) {
 					if(!envs.has(envId))
-						envs.set(envId, env);
+						envs.set(envId, {
+							id: envId,
+							perms: await role.getEnvPerms(envId)
+						});
 				}
 			}
 		}
@@ -115,16 +120,14 @@ class Connection {
 	}
 
 	async getEnvIds() {
-		const userPerms = await this.getUserPerms();
-
-		if(userPerms.includes(constants.perms.FULLENVACCESS)) {
+		if(await this.data.user.hasPerm(constants.perms.FULLENVACCESS)) {
 			return await s.members(constants.database.env.BASE);
 		} else {
-			const envIds = await s.members(`${constants.database.users.perms.ENV}`);
-			const rolePerms = await this.getRolePerms();
+			const envIds = await this.data.user.getEnvIds();
+			const roles = await this.data.user.getRoles();
 
-			for(const [, role] of rolePerms) {
-				for(const [envId] of role.env) {
+			for(const [,role] of roles) {
+				for(const envId of await role.getEnvIds()) {
 					if(!envIds.includes(envId))
 						envIds.push(envId);
 				}
@@ -134,45 +137,57 @@ class Connection {
 		}
 	}
 
-	async getEnvSettings() {
-		const envIds = await this.getEnvIds();
-		let env = new Map();
+	async getEnvs() {
+		if(await this.data.user.hasPerm(constants.perms.FULLENVACCESS)) {
+			const envIds = await s.members(constants.database.env.BASE);
+			const envs = new Map();
 
-		for (const envId of envIds) {
-			env.set(envId, {
-				id: envId,
-				settings: await h.getall(`${constants.database.env.BASE}:${envId}:${constants.database.env.SETTINGS}`)
-			});
+			for (const envId of envIds)
+				envs.set(envId, new Env(envId));
+
+			return envs;
+		} else {
+			const envs = await this.data.user.getEnvs();
+			const roles = await this.data.user.getRoles();
+
+			for(const [,role] of roles) {
+				for(const [,env] of await role.getEnvs()) {
+					if(!envs.has(await env.getId()))
+						envs.set(await env.getId(), env);
+				}
+			}
+
+			return envs;
 		}
-
-		return env;
 	}
 
 	async getPerms() {
 		return {
-			user: this.getUserPerms(),
-			env: this.getEnvPerms()
+			user: await this.getUserPerms(),
+			env: await this.getEnvPerms()
 		};
 	}
 
 	async getSettings() {
-		return await h.getall(`${this.data.userLocation}:${constants.database.users.SETTINGS}`);
+		return await this.data.user.getSettings();
 	}
 
 	async getEnv() {
 		const envPerms = await this.getEnvPerms();
-		const envSettings = await this.getEnvSettings();
-		let envs = new Map();
+		const envs = await this.getEnvs();
 
-		for (const [envId, envPerm] of envPerms) {
-			envs.set(envId, {
+		const userEnvs = new Map();
+
+		for (const [,env] of envs) {
+			const envId = await env.getId();
+			userEnvs.set(envId, {
 				id: envId,
-				perms: envPerm,
-				settings: envSettings.get(envId)
+				perms: envPerms.get(envId),
+				settings: env.getSettings()
 			});
 		}
 
-		return envs;
+		return userEnvs;
 	}
 
 	getState() {
@@ -180,11 +195,11 @@ class Connection {
 	}
 
 	async getUsers() {
-		return await get(constants.database.users.BASE);
+		return await s.members(constants.database.users.BASE);
 	}
 
-	getUsername() {
-		return this.data.username;
+	async getUsername() {
+		return await this.data.user.getUsername();
 	}
 
 	isLoggedIn() {
@@ -192,7 +207,7 @@ class Connection {
 	}
 
 	async hasPerms(...perms) {
-		const userPerms = await this.getPerms();
+		const userPerms = await this.getUserPerms();
 		for (const perm of perms) {
 			if (!userPerms.includes(perm))
 				return false;
@@ -205,19 +220,19 @@ class Connection {
 	}
 
 	async login({username, password}) {
-		if (username && password && !username.includes(':')) {
+		if (username && username.length > 2 && password && password.length > 2 && !username.includes(':')) {
 			username = username.toLowerCase();
 
-			if (await s.ismember(constants.database.users.BASE, username) && await get(`${constants.database.users.BASE}:${username}:${constants.database.users.PASSWORD}`) === util.hash(username, password)) {
-				this.data.username = username;
-				this.data.userLocation = `${constants.database.users.BASE}:${username}`;
+			if (await s.ismember(constants.database.users.BASE, username)) {
+				const user = new User(username);
+				this.data.user = user;
 
-				const settings = await this.getSettings();
-
-				if (settings.needsTwoFactor === constants.database.variables.TRUE)
-					this.data.state = constants.connection.states.NEEDSTWOFACTOR;
-				else
-					this.data.state = constants.connection.states.LOGGEDIN;
+				if (await user.comparePassword(password)) {
+					if (await user.needsTwoFactor())
+						this.data.state = constants.connection.states.NEEDSTWOFACTOR;
+					else
+						this.data.state = constants.connection.states.LOGGEDIN;
+				}
 
 				return true;
 			}

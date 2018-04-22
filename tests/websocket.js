@@ -5,50 +5,55 @@ const wsOptions = {
 const uws = require('uws');
 
 const logger = require('../services/logger'),
-      {hm, s, set} = require('../services/datastore'),
       ws = require('../services/websockets'),
       log = logger.createLogger('Tester'),
       constants = require('../util/constants'),
-      structures = require('../util/structures'),
-      util = require('../util/util');
+      structures = require('../util/structures');
 
-s.add('environments', '123', 'testid', 'testid1').catch(() => {});
-
-structures.createRole({
-	name: 'testrole',
-	perms: [
-		0
-	],
-	envs: [
-		{
-			id: "testid1",
-			perms: [
-				0
-			]
-		}
-	]
+logger.on('message', (serviceName, message) => {
+	console.log(`[${serviceName}] - ${message}`)
 });
 
-//s.add('roles', 'testrole').catch(() => {});
-//s.add('roles:testrole:env', 'testid1').catch(() => {});
-//s.add('roles:testrole:env:testid1', 0).catch(() => {});
-///s.add('roles:testrole:general', 0).catch(() => {});
+structures.createEnv({
+	id: 'testid'
+}).then(async () => {
+	await structures.createEnv({
+    id: 'testid1'
+	});
 
-structures.createUser({
-	username: 'test',
-	password: 'test',
-	settings: {
-		someSetting: 'someValue',
-		needsTwoFactor: constants.database.variables.FALSE
-	},
-	roles: [
-		'testrole'
-	],
-	perms: {
-		general: [
+	await structures.createEnv({
+		id: 'test123'
+	});
+
+	const testRole = await structures.createRole({
+		name: 'testrole',
+		perms: [
 			0
 		],
-		env: [
+		envs: [
+			{
+				id: "testid1",
+				perms: [
+					0
+				]
+			}
+		]
+	});
+
+	const testUser = await structures.createUser({
+		username: 'test',
+		password: 'test',
+		needsTwoFactor: false,
+		settings: {
+			someSetting: 'someValue',
+		},
+		roles: [
+			'testrole'
+		],
+		perms: [
+			constants.perms.GETUSERS
+		],
+		envs: [
 			{
 				id: 'testid',
 				perms: [
@@ -56,20 +61,26 @@ structures.createUser({
 				]
 			}
 		]
-	}
-}).then(async () => {
-	//set('users:test:password', util.hash('test', 'test')).catch(() => {});
-	//hm.set('users:test:settings', 'someSetting', 'someValue').catch(() => {});
-
-	//s.add('users', 'test').catch(() => {});
-	//s.add('users:test:perms:env', 'testid').catch(() => {});
-	//s.add('users:test:perms:env:testid', 0).catch(() => {});
-	//s.add('users:test:perms:general', 0).catch(() => {});
-	//s.add('users:test:roles', 'testrole').catch(() => {});
-
-	logger.on('message', (serviceName, message) => {
-		console.log(`[${serviceName}] - ${message}`)
 	});
+
+//s.add('environments', '123', 'testid', 'testid1').catch(() => {});
+
+
+//s.add('roles', 'testrole').catch(() => {});
+//s.add('roles:testrole:env', 'testid1').catch(() => {});
+//s.add('roles:testrole:env:testid1', 0).catch(() => {});
+///s.add('roles:testrole:general', 0).catch(() => {});
+
+
+//set('users:test:password', util.hash('test', 'test')).catch(() => {});
+//hm.set('users:test:settings', 'someSetting', 'someValue').catch(() => {});
+
+
+//s.add('users', 'test').catch(() => {});
+//s.add('users:test:perms:env', 'testid').catch(() => {});
+//s.add('users:test:perms:env:testid', 0).catch(() => {});
+//s.add('users:test:perms:general', 0).catch(() => {});
+//s.add('users:test:roles', 'testrole').catch(() => {});
 
 	ws.init(wsOptions);
 	const socket = new uws(`ws://localhost:${wsOptions.port}`);
@@ -86,7 +97,7 @@ structures.createUser({
 		}));
 	});
 
-	socket.on('message', (message) => {
+	socket.on('message', async (message) => {
 		const {type, response} = JSON.parse(message);
 		switch(type) {
 			case 'auth':
@@ -97,7 +108,8 @@ structures.createUser({
 							type: 'get',
 							request: {
 								settings: [],
-								env: []
+								env: [],
+								users: []
 							}
 						}));
 					} else
@@ -128,31 +140,46 @@ structures.createUser({
 				if (response.env) {
 					response.env = new Map(response.env);
 					log(`${'PASS'.green} | Responded with environments`);
-					if (response.env.has('testid') && response.env.has('testid1') && !response.env.has('123'))
+					if (response.env.size === 2 && response.env.has('testid') && response.env.has('testid1') && !response.env.has('123'))
 						log(`${'PASS'.green} | Correct environments included`);
 					else
 						log(`${'FAIL'.red} | Correct environments included`);
 				} else
 					log(`${'FAIL'.red} | Responded with environments`);
 
-				if (response.users)
+				if (response.users && response.users.length === 1 && response.users[0] === 'test')
 					log(`${'PASS'.green} | Responded with Users`);
 				else
 					log(`${'FAIL'.red} | Responded with Users`);
 
-				structures.deleteUser('test').then(() => {
-					log(`${'PASS'.green} | Remove user from database`);
-				}).catch((err) => {
-					log(`${'FAIL'.red} | Remove user from database`);
-					console.log(err);
-				});
+				try {
+					await structures.deleteEnv('testid');
+					if (!await testUser.hasEnv('testid'))
+						log(`${'PASS'.green} | Remove env from database`);
+					else
+						log(`${'FAIL'.red} | Remove env from database`);
 
-				structures.deleteRole('testrole').then(() => {
-					log(`${'PASS'.green} | Remove role from database`);
-				}).catch((err) => {
-					log(`${'FAIL'.red} | Remove role from database`);
+					await structures.deleteEnv('testid1');
+					if (!await testRole.hasEnv('testid1'))
+						log(`${'PASS'.green} | Remove env from database`);
+					else
+						log(`${'FAIL'.red} | Remove env from database`);
+
+
+					await structures.deleteEnv('test123');
+					log(`${'PASS'.green} | Remove env from database`);
+
+					await structures.deleteRole('testrole');
+					if (!await testUser.hasRole('testrole'))
+						log(`${'PASS'.green} | Remove role from database`);
+					else
+						log(`${'FAIL'.red} | Remove role from database`);
+
+					await structures.deleteUser('test');
+					log(`${'PASS'.green} | Remove user from database`);
+				} catch(err) {
 					console.log(err);
-				});
+				}
 				break;
 			case 'error':
 				log(response.code);
