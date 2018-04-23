@@ -12,7 +12,7 @@ Install [NodeJS 9.5.0+](https://nodejs.org/en/download/current/)
 git clone https://github.com/bob620/incheon
 npm install
 
-node tests/websockets.js
+node tests/websocket.js
 ```
 
 Expected output:
@@ -23,5 +23,10 @@ Expected output:
 [Tester] - PASS | Settings contains correct values
 [Tester] - PASS | Responded with environments
 [Tester] - PASS | Correct environments included
-[Tester] - FAIL | Responded with Users
+[Tester] - PASS | Responded with Users
+[Tester] - PASS | Remove env from database
+[Tester] - PASS | Remove env from database
+[Tester] - PASS | Remove env from database
+[Tester] - PASS | Remove role from database
+[Tester] - PASS | Remove user from database
 ```
