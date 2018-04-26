@@ -2,7 +2,7 @@ const constants = require('../util/constants');
 
 module.exports = {
 	ping: connection => {
-		connection.sendResponse('pong', {});
+		connection.send('pong');
 	},
 	auth: async (connection, request) => {
 		if (await connection.login(request)) {

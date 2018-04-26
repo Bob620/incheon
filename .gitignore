@@ -59,3 +59,7 @@ typings/
 
 # jetbrains folder
 .idea
+
+# server config
+config/config.json
+backup/config/config.json

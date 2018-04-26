@@ -25,7 +25,7 @@ class Connection {
 					case 'auth':
 						wsProtocol.auth(this, request);
 						break;
-					case 'twoFactor':
+					case 'twofactor':
 						wsProtocol.twoFactor(this, request);
 						break;
 					case 'set':

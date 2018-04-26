@@ -38,6 +38,11 @@ class websockets {
 
 			this.addConnUser(connId, connection);
 
+			conn.send(JSON.stringify({
+				type: 'protocol',
+				response: 'incheon-v1'
+			}));
+
 			conn.on('close', () => {
 				connection.data.state = constants.connection.states.CLOSED;
 				this.removeConnUser(connId);

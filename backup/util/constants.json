@@ -1,0 +1,20 @@
+{
+  "websocket": {
+    "errorCodes": {
+      "NOTLOGGEDIN": 100,
+      "LOGIN": 101,
+      "TWOFACTOR": 102,
+      "ALREADYLOGGEDIN": 103,
+      "SERVERERROR": 500,
+      "NOTFOUND": 400
+    },
+    "errorMessages": {
+      "NOTLOGGEDIN": "Not logged in",
+      "LOGIN": "Incorrect username or password",
+      "TWOFACTOR": "Incorrect two factor code",
+      "ALREADYLOGGEDIN": "Already logged in",
+      "SERVERERROR": "Server encountered an unexpected error",
+      "NOTFOUND": "That resource was not found"
+    }
+  }
+}

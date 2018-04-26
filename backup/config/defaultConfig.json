@@ -1,0 +1,11 @@
+{
+  "admin": {
+    "username": "",
+    "passHash": ""
+  },
+  "port": 4040,
+  "error": {
+    "err": "none",
+    "time": ""
+  }
+}
