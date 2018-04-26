@@ -31,13 +31,13 @@ try {
 		connectedUsers.set(connId, connection);
 
 		conn.send(JSON.stringify({
-			type: 'protocol',
-			response: 'incheon-recovery'
+			type: 'message',
+			response: 'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
 		}));
 
 		conn.send(JSON.stringify({
-			type: 'message',
-			response: 'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
+			type: 'protocol',
+			response: 'incheon-recovery'
 		}));
 
 		conn.on('close', () => {
