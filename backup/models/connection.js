@@ -13,8 +13,8 @@ class Connection {
 		return this.data.isLoggedIn;
 	}
 
-	login({username, password}, {admin: {adminUsername, passHash: adminPassHash}}) {
-		if (adminUsername === username && adminPassHash === util.hash(username, password)) {
+	login({username, password}, {admin: {username: adminUsername, password: adminPassword}}) {
+		if (adminUsername === username && util.hash(adminUsername, adminPassword) === util.hash(username, password)) {
 			this.data.isLoggedIn = true;
 			return true;
 		}
@@ -22,7 +22,11 @@ class Connection {
 	}
 
 	sendMessage(type, response) {
-		this.send(JSON.stringify(util.createMessage(type, response)));
+		this.sendJSON(util.createMessage(type, response));
+	}
+
+	sendJSON(message) {
+		this.send(JSON.stringify(message));
 	}
 
 	send(message) {

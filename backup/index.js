@@ -1,18 +1,19 @@
-try {
+function startIncheon() {
 	const config = require('../config/config.json');
 	const incheon = require('../incheon.js');
 
 	incheon.init(config);
 	incheon.start({backupTest: true});
+}
 
-} catch(err) {
+function onFail(err) {
 	console.log(err);
 	console.log('\nCaught top-level exception in Incheon,\nStarting Incheon Recovery/Backup Utility...');
 
 	const config = require('./config/config.json'),
-	      util = require('./util/util'),
-	      wsProtocol = require('./util/wsprotocol'),
-	      Connection = require('./models/connection');
+		util = require('./util/util'),
+		wsProtocol = require('./util/wsprotocol'),
+		Connection = require('./models/connection');
 
 	config.error = {
 		err,
@@ -31,13 +32,13 @@ try {
 		connectedUsers.set(connId, connection);
 
 		conn.send(JSON.stringify({
-			type: 'message',
-			response: 'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
+			type: 'protocol',
+			response: 'incheon-recovery'
 		}));
 
 		conn.send(JSON.stringify({
-			type: 'protocol',
-			response: 'incheon-recovery'
+			type: 'message',
+			response: 'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
 		}));
 
 		conn.on('close', () => {
@@ -56,9 +57,31 @@ try {
 				case 'ping':
 					wsProtocol.ping(conn);
 					break;
+				case 'gitpull':
+					wsProtocol.gitPull(connection, message, config);
+					break;
+				case 'gitversion':
+					wsProtocol.gitVersion(connection, message, config);
+					break;
+				case 'version':
+					wsProtocol.version(connection, message, config);
+					break;
+				case 'restart':
+					try {
+						startIncheon();
+					} catch(err) {
+						onFail(err);
+					}
+					break;
 			}
 		});
 	});
 
 	console.log(`Utility listening on port ${config.port}`);
+}
+
+try {
+	startIncheon();
+} catch(err) {
+	onFail(err);
 }

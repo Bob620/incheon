@@ -6,7 +6,7 @@ module.exports = {
 		conn.send('pong');
 	},
 	auth: async (conn, message, config) => {
-		if (conn.login(message.response, config)) {
+		if (conn.login(message.request, config)) {
 			conn.sendMessage('auth', {
 				success: true
 			});
@@ -32,5 +32,21 @@ module.exports = {
 			});
 			conn.close();
 		}
+	},
+	version: async (conn, message, config) => {
+		conn.sendJSON({
+			type:'message',
+			response: `Recovery Utility Version: ${config.version}\nIncheon Version: ${require('../../package.json').version}`
+		});
+	},
+	gitPull: async (conn, message, config) => {
+		conn.sendMessage('gitpull', {
+
+		});
+	},
+	gitVersion: async (conn, message, config) => {
+		conn.sendMessage('gitversion', {
+
+		});
 	}
 };
