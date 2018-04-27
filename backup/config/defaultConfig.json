@@ -1,7 +1,7 @@
 {
   "admin": {
     "username": "",
-    "passHash": ""
+    "password": ""
   },
   "port": 4040,
   "error": {
