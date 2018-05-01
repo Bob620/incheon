@@ -55,7 +55,7 @@ function onFail(err) {
 					wsProtocol.servererror(connection, message, config);
 					break;
 				case 'ping':
-					wsProtocol.ping(conn);
+					wsProtocol.ping(connection);
 					break;
 				case 'gitpull':
 					wsProtocol.gitPull(connection, message, config);
@@ -68,6 +68,7 @@ function onFail(err) {
 					break;
 				case 'restart':
 					try {
+						server.close();
 						startIncheon();
 					} catch(err) {
 						onFail(err);

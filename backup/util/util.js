@@ -41,7 +41,7 @@ const utilModules = {
 		return out;
 	},
 	hash: (salt, string) => {
-		return utilModules.Utf8ArrayToStr(nacl.hash(new Uint8Array(`${salt}${string}`)))
+		return utilModules.Utf8ArrayToStr(nacl.hash(Uint8Array.from(`${salt}${string}`)))
 	},
 	createMessage: (type, response) => {
 		return {

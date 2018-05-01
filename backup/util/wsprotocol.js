@@ -3,7 +3,7 @@ const util = require('./util'),
 
 module.exports = {
 	ping: async conn => {
-		conn.send('pong');
+		conn.sendMessage('pong', {});
 	},
 	auth: async (conn, message, config) => {
 		if (conn.login(message.request, config)) {
