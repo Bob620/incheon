@@ -48,6 +48,12 @@ function onFail(err) {
 		conn.on('message', (message) => {
 			message = JSON.parse(message);
 			switch(message.type) {
+				case 'exit':
+					wsProtocol.exit(connection);
+					break;
+				case 'help':
+					wsProtocol.help(connection, message, config);
+					break;
 				case 'auth':
 					wsProtocol.auth(connection, message, config);
 					break;

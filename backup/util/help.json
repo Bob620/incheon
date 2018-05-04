@@ -1,0 +1,36 @@
+{
+  "commands": [
+    ["help", {
+      "desc": "Provides help information about commands",
+      "command": "help"
+    }],
+    ["version", {
+      "desc": "Provides information about versioning",
+      "command": "version"
+    }],
+    ["servererror", {
+      "desc": "Gives the error that caused the server to crash",
+      "command": "servererror"
+    }],
+    ["gitversion", {
+      "desc": "Provides information about the newest repo version",
+      "command": "gitVersion"
+    }],
+    ["gitpull", {
+      "desc": "Pulls the newest git repo for Incheon",
+      "command": "gitPull"
+    }],
+    ["restart", {
+      "desc": "Restart the server(restart Incheon)",
+      "command": "restart"
+    }],
+    ["exit", {
+      "desc": "Closes the current user session",
+      "command": "exit"
+    }],
+    ["ping", {
+      "desc": "Pong",
+      "command": "ping"
+    }]
+  ]
+}
