@@ -66,6 +66,9 @@ function onFail(err) {
 				case 'gitpull':
 					wsProtocol.gitPull(connection, message, config);
 					break;
+				case 'gitrebase':
+					wsProtocol.gitRebase(connection, message, config);
+					break;
 				case 'gitversion':
 					wsProtocol.gitVersion(connection, message, config);
 					break;

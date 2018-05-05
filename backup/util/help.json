@@ -20,6 +20,10 @@
       "desc": "Pulls the newest git repo for Incheon",
       "command": "gitPull"
     }],
+    ["gitrebase", {
+      "desc": "Pulls the newest git repo for Incheon and rebases the repo",
+      "command": "gitPull"
+    }],
     ["restart", {
       "desc": "Restart the server(restart Incheon)",
       "command": "restart"

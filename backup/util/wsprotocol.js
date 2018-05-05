@@ -76,7 +76,26 @@ module.exports = {
 			console.log(err);
 
 			conn.sendMessage('message',
-				'Unable to rebase repo due to error, please retry or take higher action'
+				'Unable to update repo due to a fatal error, please retry or take higher action (gitrebase may work)'
+			);
+		}
+	},
+	gitRebase: async (conn, message, config) => {
+		conn.sendMessage('message',
+			'Rebasing repo...'
+		);
+
+		try {
+			simpleGit().pull('origin', 'master', {'--rebase': 'true'}, () => {
+				conn.sendMessage('message',
+					'Repo rebased, please restart using `restart`'
+				);
+			});
+		} catch(err) {
+			console.log(err);
+
+			conn.sendMessage('message',
+				'Unable to rebase repo due to a fatal error, please retry or take higher action'
 			);
 		}
 	},
