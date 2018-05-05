@@ -3,7 +3,7 @@ function startIncheon() {
 	const incheon = require('../incheon.js');
 
 	incheon.init(config);
-	incheon.start({backupTest: true});
+	incheon.start({forceError: config.forceError});
 }
 
 function onFail(err) {
@@ -31,15 +31,13 @@ function onFail(err) {
 
 		connectedUsers.set(connId, connection);
 
-		conn.send(JSON.stringify({
-			type: 'protocol',
-			response: 'incheon-recovery'
-		}));
+		connection.sendMessage('protocol',
+			'incheon-recovery'
+		);
 
-		conn.send(JSON.stringify({
-			type: 'message',
-			response: 'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
-		}));
+		connection.sendMessage('message',
+			'Welcome to the Incheon recovery/backup websocket utility.\nHopefully this isn\'t seen often, otherwise there is an issue with code reviews and/or testing.'
+		);
 
 		conn.on('close', () => {
 			connectedUsers.delete(connId);
@@ -84,12 +82,8 @@ function onFail(err) {
 					wsProtocol.version(connection, message, config);
 					break;
 				case 'restart':
-					try {
-						server.close();
-						startIncheon();
-					} catch(err) {
-						onFail(err);
-					}
+					server.close();
+					process.exit();
 					break;
 			}
 		});

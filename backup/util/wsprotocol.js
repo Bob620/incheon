@@ -56,10 +56,9 @@ module.exports = {
 		}
 	},
 	version: async (conn, message, config) => {
-		conn.sendJSON({
-			type:'message',
-			response: `Recovery Utility Version: ${config.version}\nIncheon Version: ${require('../../package.json').version}`
-		});
+		conn.sendMessage('message',
+			`Recovery Utility Version: ${config.version}\nIncheon Version: ${require('../../package.json').version}`
+		);
 	},
 	gitPull: async (conn, message, config) => {
 		conn.sendMessage('message',

@@ -9,8 +9,8 @@ class Incheon {
 
 	}
 
-	start({backupTest=false}) {
-		if (backupTest) {
+	start({forceError=false}) {
+		if (forceError) {
 			// Test the backup service
 			throw "intentional uncaught error";
 		} else {
