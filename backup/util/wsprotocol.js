@@ -1,4 +1,4 @@
-const nodegit = require('nodegit');
+const simpleGit = require('simple-git');
 
 const util = require('./util'),
       helpInfo = new Map(require('./help').commands);
@@ -62,17 +62,23 @@ module.exports = {
 		});
 	},
 	gitPull: async (conn, message, config) => {
-		const repo = await nodegit.Repository.open(require('path').resolve('./'));
-
 		conn.sendMessage('message',
-			'Rebasing repo...'
+			'Pulling repo updates...'
 		);
 
-		await repo.rebase();
+		try {
+			simpleGit().pull(() => {
+				conn.sendMessage('message',
+					'Repo updated, please restart using `restart`'
+				);
+			});
+		} catch(err) {
+			console.log(err);
 
-		conn.sendMessage('message',
-			'Repo rebased, please restart using `restart`'
-		);
+			conn.sendMessage('message',
+				'Unable to rebase repo due to error, please retry or take higher action'
+			);
+		}
 	},
 	gitVersion: async (conn, message, config) => {
 		conn.sendMessage('gitversion', {
