@@ -66,38 +66,32 @@ module.exports = {
 			'Pulling repo updates...'
 		);
 
-		try {
-			simpleGit().pull(() => {
+		simpleGit().pull(err => {
+			if (err)
+				conn.sendMessage('message',
+					'Unable to update repo due to a fatal error, please retry or take higher action (gitrebase may work)'
+				);
+			else
 				conn.sendMessage('message',
 					'Repo updated, please restart using `restart`'
 				);
-			});
-		} catch(err) {
-			console.log(err);
-
-			conn.sendMessage('message',
-				'Unable to update repo due to a fatal error, please retry or take higher action (gitrebase may work)'
-			);
-		}
+		});
 	},
 	gitRebase: async (conn, message, config) => {
 		conn.sendMessage('message',
 			'Rebasing repo...'
 		);
 
-		try {
-			simpleGit().pull('origin', 'master', {'--rebase': 'true'}, () => {
+		simpleGit().pull('origin', 'master', {'--rebase': 'true'}, err => {
+			if (err)
+				conn.sendMessage('message',
+					'Unable to rebase repo due to a fatal error, please retry or take higher action'
+				);
+			else
 				conn.sendMessage('message',
 					'Repo rebased, please restart using `restart`'
 				);
-			});
-		} catch(err) {
-			console.log(err);
-
-			conn.sendMessage('message',
-				'Unable to rebase repo due to a fatal error, please retry or take higher action'
-			);
-		}
+		});
 	},
 	gitVersion: async (conn, message, config) => {
 		conn.sendMessage('gitversion', {
