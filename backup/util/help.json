@@ -8,19 +8,19 @@
       "desc": "Provides information about versioning",
       "command": "version"
     }],
-    ["servererror", {
+    ["showerror", {
       "desc": "Gives the error that caused the server to crash",
-      "command": "servererror"
+      "command": "showError"
     }],
-    ["gitversion", {
+    ["git version", {
       "desc": "Provides information about the newest repo version",
       "command": "gitVersion"
     }],
-    ["gitpull", {
+    ["git pull", {
       "desc": "Pulls the newest git repo for Incheon",
       "command": "gitPull"
     }],
-    ["gitrebase", {
+    ["git rebase", {
       "desc": "Pulls the newest git repo for Incheon and rebases the repo",
       "command": "gitPull"
     }],

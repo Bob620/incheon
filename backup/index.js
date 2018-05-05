@@ -57,20 +57,28 @@ function onFail(err) {
 				case 'auth':
 					wsProtocol.auth(connection, message, config);
 					break;
-				case 'servererror':
+				case 'showerror':
 					wsProtocol.servererror(connection, message, config);
 					break;
 				case 'ping':
 					wsProtocol.ping(connection);
 					break;
-				case 'gitpull':
-					wsProtocol.gitPull(connection, message, config);
-					break;
-				case 'gitrebase':
-					wsProtocol.gitRebase(connection, message, config);
-					break;
-				case 'gitversion':
-					wsProtocol.gitVersion(connection, message, config);
+				case 'git':
+					switch(message.request.split()[0]) {
+						case 'pull':
+							wsProtocol.gitPull(connection, message, config);
+							break;
+						case 'rebase':
+							wsProtocol.gitRebase(connection, message, config);
+							break;
+						case 'version':
+							wsProtocol.gitVersion(connection, message, config);
+							break;
+						default:
+							message.request = 'git';
+							wsProtocol.help(connection, message, config);
+							break;
+					}
 					break;
 				case 'version':
 					wsProtocol.version(connection, message, config);

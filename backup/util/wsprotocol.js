@@ -12,9 +12,9 @@ module.exports = {
 		conn.close();
 	},
 	help: async (conn, message, config) => {
-		if (helpInfo.has(message)) {
+		if (message.request && helpInfo.has(message.request)) {
 			conn.sendMessage('message',
-				helpInfo.get(message).desc
+				helpInfo.get(message.request).desc
 			);
 		} else {
 			let helpMessage = '';
@@ -41,7 +41,7 @@ module.exports = {
 			conn.close();
 		}
 	},
-	servererror: async (conn, message, config) => {
+	showError: async (conn, message, config) => {
 		if (conn.isLoggedIn()) {
 			conn.sendMessage('error', {
 				err: config.error
