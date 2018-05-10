@@ -14,6 +14,8 @@ logger.on('message', (serviceName, message) => {
 	console.log(`[${serviceName}] - ${message}`)
 });
 
+log('Starting ws Test');
+
 structures.createEnv({
 	id: 'testid'
 }).then(async () => {
@@ -63,7 +65,7 @@ structures.createEnv({
 		]
 	});
 
-	ws.init(wsOptions);
+	await ws.init(wsOptions);
 	const socket = new uws(`ws://localhost:${wsOptions.port}`);
 
 	socket.on('open', () => {

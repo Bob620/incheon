@@ -1,9 +1,13 @@
 function startIncheon() {
-	const config = require('../config/config.json');
-	const incheon = require('../incheon.js');
+	try {
+		const config = require('../config/config.json');
+		const incheon = require('../incheon.js');
 
-	incheon.init(config);
-	incheon.start({forceError: config.forceError});
+		incheon.init(config);
+		incheon.start({forceError: config.forceError});
+	} catch(err) {
+		onFail(err);
+	}
 }
 
 function onFail(err) {
@@ -11,9 +15,9 @@ function onFail(err) {
 	console.log('\nCaught top-level exception in Incheon,\nStarting Incheon Recovery/Backup Utility...');
 
 	const config = require('./config/config.json'),
-		util = require('./util/util'),
-		wsProtocol = require('./util/wsprotocol'),
-		Connection = require('./models/connection');
+	      util = require('./util/util'),
+	      wsProtocol = require('./util/wsprotocol'),
+		    Connection = require('./models/connection');
 
 	config.error = {
 		err,
@@ -82,7 +86,7 @@ function onFail(err) {
 					wsProtocol.version(connection, message, config);
 					break;
 				case 'restart':
-					server.close();
+					server.close(1);
 					process.exit();
 					break;
 			}
@@ -92,8 +96,4 @@ function onFail(err) {
 	console.log(`Utility listening on port ${config.port}`);
 }
 
-try {
-	startIncheon();
-} catch(err) {
-	onFail(err);
-}
+startIncheon();

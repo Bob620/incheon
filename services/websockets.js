@@ -21,6 +21,13 @@ class websockets {
 		this.data.port = port;
 	}
 
+	async restartOnPort(port) {
+		this.setPort(port);
+
+		await this.closeServer();
+		this.startServer();
+	}
+
 	addConnUser(connId, connection) {
 		this.data.conns.set(connId, connection);
 	}
@@ -30,30 +37,37 @@ class websockets {
 	}
 
 	startServer() {
-		this.data.server = new uws.Server({port: this.getPort()});
+		if (this.data.server === undefined) {
+			this.data.server = new uws.Server({port: this.getPort()});
 
-		this.data.server.on('connection', conn => {
-			const connId = uuid.generateV4();
-			const connection = new Connection(conn, connId);
+			this.data.server.on('connection', conn => {
+				const connId = uuid.generateV4();
+				const connection = new Connection(conn, connId);
 
-			this.addConnUser(connId, connection);
+				this.addConnUser(connId, connection);
 
-			conn.send(JSON.stringify({
-				type: 'protocol',
-				response: 'incheon-v1'
-			}));
-
-			conn.on('close', () => {
-				connection.data.state = constants.connection.states.CLOSED;
-				this.removeConnUser(connId);
+				conn.on('close', () => {
+					connection.data.state = constants.connection.states.CLOSED;
+					this.removeConnUser(connId);
+				});
 			});
+		}
+	}
+
+	closeServer() {
+		return new Promise((resolve) => {
+			if (this.data.server === undefined)
+				resolve();
+			else
+				this.data.server.close(() => {
+					this.data.server = undefined;
+					resolve();
+				});
 		});
 	}
 
-	init({port}) {
-		this.setPort(port);
-
-		this.startServer();
+	async init({port}) {
+		await this.restartOnPort(port);
 	}
 }
 

@@ -1,6 +1,6 @@
 const {s} = require('./datastore'),
       constants = require('../util/constants'),
-      wsProtocol = require('../util/wsprotocol'),
+      { wsEvents } = require('../util/wsprotocol'),
       User = require('../models/user'),
       Env = require('../models/env'),
       util = require('../util/util');
@@ -16,28 +16,7 @@ class Connection {
 
 		conn.on('message', async (message) => {
 			if (this.getState() !== constants.connection.states.CLOSED) {
-				const {type, request} = JSON.parse(message);
-
-				switch(type) {
-					case 'ping':
-						wsProtocol.ping(this);
-						break;
-					case 'auth':
-						wsProtocol.auth(this, request);
-						break;
-					case 'twofactor':
-						wsProtocol.twoFactor(this, request);
-						break;
-					case 'set':
-						wsProtocol.set(this, request);
-						break;
-					case 'get':
-						wsProtocol.get(this, request);
-						break;
-					case 'deauth':
-						wsProtocol.deauth(this, request);
-						break;
-				}
+				wsEvents.onMessage(this, message);
 			} else {
 				this.sendResponse('error', {
 					code: constants.websocket.errorCodes.SERVERERROR,
@@ -46,6 +25,8 @@ class Connection {
 				this.close();
 			}
 		});
+
+		wsEvents.onConnect(this);
 	}
 
 	async getRoles() {
