@@ -18,6 +18,9 @@
     }
   },
   "database": {
+    "errorCodes": {
+      "ECONNREFUSED": "ECONNREFUSED"
+    },
     "variables": {
       "FALSE": "false",
       "TRUE": "true"

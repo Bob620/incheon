@@ -1,5 +1,5 @@
 const wsOptions = {
-	port: '4040'
+	port: '4041'
 };
 
 const uws = require('uws');

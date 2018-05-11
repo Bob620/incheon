@@ -4,13 +4,8 @@
     "maxPort": 0,
     "usedPorts": []
   },
-  "databaseManager": {
-    "url": "",
-    "dbName": "",
-    "account": {
-      "username": "",
-      "password": ""
-    }
+  "redis": {
+    "host": "localhost"
   },
   "forceError": false
 }
